@@ -2,7 +2,7 @@
   <div class="tag-cloud-container">
     <vue-word-cloud
       :words="formattedTags"
-      :color="([text, weight, tag]) => tag.color"
+      :color="colorForWord"
       font-family="Roboto, sans-serif"
       :font-size-ratio="5"
       :rotation="0"
@@ -33,7 +33,10 @@ const formattedTags = computed(() => {
   return props.tags.map(tag => [tag.name, tag.count, tag])
 })
 
-const handleWordClick = (word: string, weight: number, tag: Tag) => {
+// vue-word-cloud 传入 [文本, 权重, 原始数据]
+type WordEntry = [string, number, TagWithCount]
+const colorForWord = (entry: WordEntry) => entry[2].color
+const handleWordClick = (_word: string, _weight: number, tag: Tag) => {
   emit('select', tag)
 }
 </script>

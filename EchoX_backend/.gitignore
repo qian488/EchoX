@@ -20,6 +20,9 @@ go.work
 # Environment variables
 .env
 
+# Uploaded user files
+uploads/
+
 # IDE specific files
 .idea/
 .vscode/

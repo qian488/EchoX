@@ -55,7 +55,7 @@ const registerForm = reactive({
   confirmPassword: ''
 })
 
-const validatePass = (rule: any, value: string, callback: any) => {
+const validatePass = (_rule: any, value: string, callback: any) => {
   if (value === '') {
     callback(new Error('Please enter your password'))
   } else {
@@ -68,7 +68,7 @@ const validatePass = (rule: any, value: string, callback: any) => {
   }
 }
 
-const validatePass2 = (rule: any, value: string, callback: any) => {
+const validatePass2 = (_rule: any, value: string, callback: any) => {
   if (value === '') {
     callback(new Error('Please enter your password again'))
   } else if (value !== registerForm.password) {

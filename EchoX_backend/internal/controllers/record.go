@@ -23,6 +23,7 @@ type CreateRecordRequest struct {
 	Content  string `json:"content"`
 	Type     string `json:"type" binding:"required,oneof=text image video"`
 	MediaURL string `json:"media_url"`
+	TagIDs   []uint `json:"tag_ids"`
 }
 
 type UpdateRecordDto struct {
@@ -30,19 +31,42 @@ type UpdateRecordDto struct {
 	Content  string `json:"content"`
 	Type     string `json:"type" binding:"omitempty,oneof=text image video"`
 	MediaURL string `json:"media_url"`
+	TagIDs   *[]uint `json:"tag_ids"`
 }
 
 // CreateRecord 创建新记录
 func (rc *RecordController) CreateRecord(c *gin.Context) {
-	var record models.Record
-	if err := c.ShouldBindJSON(&record); err != nil {
+	var req CreateRecordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// 设置用户ID
 	userID, _ := c.Get("user_id")
-	record.UserID = userID.(uint)
+	uid := userID.(uint)
+
+	record := models.Record{
+		Title:    req.Title,
+		Content:  req.Content,
+		Type:     req.Type,
+		MediaURL: req.MediaURL,
+		UserID:   uid,
+	}
+
+	// 校验标签归属，防止把别人的标签挂到自己的记录上
+	var tags []models.Tag
+	if len(req.TagIDs) > 0 {
+		if err := rc.DB.Where("id IN ? AND user_id = ?", req.TagIDs, uid).Find(&tags).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "查询标签失败"})
+			return
+		}
+		if len(tags) != len(req.TagIDs) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "部分标签不存在或无权使用"})
+			return
+		}
+		record.Tags = tags
+	}
 
 	if err := rc.DB.Create(&record).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建记录失败"})
@@ -130,11 +154,30 @@ func (rc *RecordController) UpdateRecord(c *gin.Context) {
 		record.MediaURL = updateData.MediaURL
 	}
 
+	if updateData.TagIDs != nil {
+		var tags []models.Tag
+		if len(*updateData.TagIDs) > 0 {
+			if err := rc.DB.Where("id IN ? AND user_id = ?", *updateData.TagIDs, userID).Find(&tags).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "查询标签失败"})
+				return
+			}
+			if len(tags) != len(*updateData.TagIDs) {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "部分标签不存在或无权使用"})
+				return
+			}
+		}
+		if err := rc.DB.Model(&record).Association("Tags").Replace(tags); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "更新标签失败"})
+			return
+		}
+	}
+
 	if err := rc.DB.Save(&record).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新记录失败"})
 		return
 	}
 
+	rc.DB.Preload("Tags").First(&record, record.ID)
 	c.JSON(http.StatusOK, record)
 }
 

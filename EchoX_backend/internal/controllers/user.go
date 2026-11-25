@@ -34,26 +34,30 @@ type LoginRequest struct {
 
 // Register 用户注册
 func (uc *UserController) Register(c *gin.Context) {
-	var user models.User
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var req RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// 检查用户名或邮箱是否已存在
 	var existingUser models.User
-	if uc.DB.Where("username = ? OR email = ?", user.Username, user.Email).First(&existingUser).Error == nil {
+	if uc.DB.Where("username = ? OR email = ?", req.Username, req.Email).First(&existingUser).Error == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "用户名或邮箱已存在"})
 		return
 	}
 
 	// 哈希密码
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "无法加密密码"})
 		return
 	}
-	user.Password = string(hashedPassword)
+	user := models.User{
+		Username: req.Username,
+		Email:    req.Email,
+		Password: string(hashedPassword),
+	}
 
 	// 创建用户
 	if err := uc.DB.Create(&user).Error; err != nil {

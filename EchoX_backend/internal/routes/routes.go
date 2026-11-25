@@ -7,18 +7,29 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(r *gin.Engine, userController *controllers.UserController, recordController *controllers.RecordController, tagController *controllers.TagController) {
+func SetupRoutes(
+	r *gin.Engine,
+	userController *controllers.UserController,
+	recordController *controllers.RecordController,
+	tagController *controllers.TagController,
+	uploadController *controllers.UploadController,
+	passwordController *controllers.PasswordController,
+	discoveryController *controllers.DiscoveryController,
+) {
 	api := r.Group("/api/v1")
 
-	// 公开路由
-	authGroup := api.Group("/auth") // 创建 /api/v1/auth 路由组
+	// 公开路由（无需 JWT）
+	authGroup := api.Group("/auth")
 	{
-		authGroup.POST("/register", userController.Register) // 路径变为 /api/v1/auth/register
-		authGroup.POST("/login", userController.Login)       // 路径变为 /api/v1/auth/login
+		authGroup.POST("/register", userController.Register)
+		authGroup.POST("/login", userController.Login)
+		authGroup.POST("/forgot-password", passwordController.ForgotPassword)
+		authGroup.POST("/reset-password", passwordController.ResetPassword)
 	}
 
 	// 需要认证的路由
-	auth := api.Use(middleware.JWTAuthMiddleware()) // 认证路由组仍然在 /api/v1 下，但现在可以考虑是否也放到 /auth 组内
+	auth := api.Group("")
+	auth.Use(middleware.JWTAuthMiddleware())
 	{
 		// 用户相关
 		auth.GET("/users/profile", userController.GetProfile)
@@ -36,5 +47,14 @@ func SetupRoutes(r *gin.Engine, userController *controllers.UserController, reco
 		auth.GET("/tags", tagController.GetTags)
 		auth.PUT("/tags/:id", tagController.UpdateTag)
 		auth.DELETE("/tags/:id", tagController.DeleteTag)
+
+		// 文件上传与媒体
+		auth.POST("/upload", uploadController.Upload)
+		auth.GET("/media/:id", uploadController.GetMedia)
+		auth.DELETE("/media/:id", uploadController.DeleteMedia)
+
+		// 搜索与时间轴
+		auth.GET("/search", discoveryController.Search)
+		auth.GET("/timeline", discoveryController.Timeline)
 	}
 }

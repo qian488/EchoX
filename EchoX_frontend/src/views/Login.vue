@@ -22,7 +22,10 @@
       </el-form>
       
       <div class="register-link">
-        Don't have an account? <router-link to="/register">Register here</router-link>
+        <div style="display: flex; justify-content: space-between">
+          <span>Don't have an account? <router-link to="/register">Register here</router-link></span>
+          <router-link to="/forgot-password">Forgot password?</router-link>
+        </div>
       </div>
     </el-card>
   </div>

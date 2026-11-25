@@ -36,12 +36,35 @@ const router = createRouter({
       name: 'tags',
       component: () => import('../views/Tags.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/timeline',
+      name: 'timeline',
+      component: () => import('../views/Timeline.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/capture',
+      name: 'capture',
+      component: () => import('../views/DataCapture.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/search',
+      name: 'search',
+      component: () => import('../views/Search.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: () => import('../views/ForgotPassword.vue')
     }
   ]
 })
 
 // Navigation guard
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const userStore = useUserStore()
   
   if (to.meta.requiresAuth && !userStore.isAuthenticated) {

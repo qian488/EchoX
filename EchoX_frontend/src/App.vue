@@ -10,6 +10,9 @@
         <div class="flex-grow" />
         <template v-if="isAuthenticated">
           <el-menu-item index="/records">Records</el-menu-item>
+          <el-menu-item index="/timeline">Timeline</el-menu-item>
+          <el-menu-item index="/search">Search</el-menu-item>
+          <el-menu-item index="/capture">Capture</el-menu-item>
           <el-menu-item index="/tags">Tags</el-menu-item>
           <el-menu-item index="/profile">Profile</el-menu-item>
           <el-menu-item @click="handleLogout">Logout</el-menu-item>

@@ -22,7 +22,13 @@ func main() {
 	config.InitDB()
 
 	// Auto migrate database schema
-	if err := config.DB.AutoMigrate(&models.User{}, &models.Record{}, &models.Tag{}); err != nil {
+	if err := config.DB.AutoMigrate(
+		&models.User{},
+		&models.Record{},
+		&models.Tag{},
+		&models.MediaFile{},
+		&models.PasswordResetToken{},
+	); err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
 
@@ -30,6 +36,9 @@ func main() {
 	userController := controllers.NewUserController(config.DB)
 	recordController := controllers.NewRecordController(config.DB)
 	tagController := controllers.NewTagController(config.DB)
+	uploadController := controllers.NewUploadController(config.DB)
+	passwordController := controllers.NewPasswordController(config.DB)
+	discoveryController := controllers.NewDiscoveryController(config.DB)
 
 	// Initialize router
 	r := gin.Default()
@@ -46,8 +55,11 @@ func main() {
 		c.Next()
 	})
 
+	// 静态文件服务：提供上传的图片/视频访问（无需鉴权）
+	r.Static("/uploads", "./uploads")
+
 	// Setup all routes using the routes package
-	routes.SetupRoutes(r, userController, recordController, tagController)
+	routes.SetupRoutes(r, userController, recordController, tagController, uploadController, passwordController, discoveryController)
 
 	// Start server
 	if err := r.Run(":8080"); err != nil {
